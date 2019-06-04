@@ -172,14 +172,13 @@ extension ALVideoCoder {
     
     private func exportVideoAsset(_ asset: AssetSource, range: CMTimeRange, exportStarted: @autoclosure @escaping () -> Void, completion: @escaping (String?) -> Void) {
         
-        asset.getAVAsset { [weak self] (asset) in
-            guard let urlAsset = asset as? AVURLAsset, let strongSelf = self else {
-                exportStarted()
+        asset.getAVAsset { [weak self] (inAsset) in
+            guard let asset = inAsset, let strongSelf = self else {
                 completion(nil)
                 return
             }
             
-            var currentDuration = CMTimeGetSeconds(urlAsset.duration)
+            var currentDuration = CMTimeGetSeconds(asset.duration)
             let requestedDuration = CMTimeGetSeconds(range.duration)
 
             if currentDuration > requestedDuration {
@@ -197,7 +196,7 @@ extension ALVideoCoder {
             try? fileManager.removeItem(at: trimmedURL)
             
             let convertProgress = Progress(totalUnitCount: Int64(currentDuration * Double(strongSelf.koef)))
-            let session = strongSelf.trimVideo(videoAsset: urlAsset, range: range, atURL: trimmedURL) { trimmedAsset in
+            let session = strongSelf.trimVideo(videoAsset: asset, range: range, atURL: trimmedURL) { trimmedAsset in
                 
                 guard let newAsset = trimmedAsset else {
                     completion(nil)
@@ -237,7 +236,7 @@ extension ALVideoCoder {
     }
     
     // video processing
-    private func trimVideo(videoAsset: AVURLAsset, range: CMTimeRange, atURL:URL, completed: @escaping (AVURLAsset?) -> Void) -> AVAssetExportSession {
+    private func trimVideo(videoAsset: AVAsset, range: CMTimeRange, atURL:URL, completed: @escaping (AVURLAsset?) -> Void) -> AVAssetExportSession {
         
         let exportSession = AVAssetExportSession(asset: videoAsset, presetName: AVAssetExportPresetPassthrough)!
         exportSession.outputURL = atURL
@@ -269,7 +268,7 @@ extension ALVideoCoder {
         
         //tracks
         let videoTrack = videoAsset.tracks(withMediaType: .video)[0]
-        let audioTrack = videoAsset.tracks(withMediaType: .audio)[0]
+        let audioTrack = videoAsset.tracks(withMediaType: .audio).first
         
         // video output settings
         let videoReaderSettings: [String : Any] = [
@@ -294,8 +293,10 @@ extension ALVideoCoder {
         
         // video/audio asset outputs
         let videoAssetReaderOutput = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: videoReaderSettings)
-        let audioAssetReaderOutput = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: outputSettings)
-        
+        var audioAssetReaderOutput: AVAssetReaderTrackOutput?
+        if let audio = audioTrack {
+            audioAssetReaderOutput = AVAssetReaderTrackOutput(track: audio, outputSettings: outputSettings)
+        }
         // setup asset readers
         let assetReader = try! AVAssetReader(asset: videoAsset)
         
@@ -303,10 +304,9 @@ extension ALVideoCoder {
         if assetReader.canAdd(videoAssetReaderOutput) {
             assetReader.add(videoAssetReaderOutput)
         }
-        if assetReader.canAdd(audioAssetReaderOutput) {
-            assetReader.add(audioAssetReaderOutput)
+        if let audioOutput = audioAssetReaderOutput, assetReader.canAdd(audioOutput) {
+            assetReader.add(audioOutput)
         }
-        
         
         // video asset input settings
         let videoSize = videoTrack.naturalSize
@@ -380,7 +380,7 @@ extension ALVideoCoder {
         audioAssetWriterInput.requestMediaDataWhenReady(on: processingQueue2) {
             while audioAssetWriterInput.isReadyForMoreMediaData {
                 
-                if let sampleBuffer = audioAssetReaderOutput.copyNextSampleBuffer() {
+                if let sampleBuffer = audioAssetReaderOutput?.copyNextSampleBuffer() {
                     audioAssetWriterInput.append(sampleBuffer)
                 } else {
                     audioAssetWriterInput.markAsFinished()
