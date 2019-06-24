@@ -855,7 +855,7 @@
 }
 
 +(NSUserDefaults *)getUserDefaults{
-    return [[NSUserDefaults standardUserDefaults] initWithSuiteName:AL_DEFAULT_APP_GROUP];
+    return [[NSUserDefaults alloc] initWithSuiteName:AL_DEFAULT_APP_GROUP];
 }
 
 

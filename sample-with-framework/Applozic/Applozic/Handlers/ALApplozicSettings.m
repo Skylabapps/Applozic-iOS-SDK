@@ -1718,19 +1718,19 @@
 
 +(void)setupSuiteAndMigrate {
     [ALApplozicSettings migrateUserDefaultsToAppGroups];
-    NSUserDefaults *userDefaults = [[NSUserDefaults standardUserDefaults] initWithSuiteName:AL_DEFAULT_APP_GROUP];
+    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] initWithSuiteName:AL_DEFAULT_APP_GROUP];
     [userDefaults setValue:AL_DEFAULT_APP_GROUP forKey:AL_SHARE_EXTENSION];
     [userDefaults synchronize];
 }
 
 +(NSString *)getShareExtentionGroup {
 
-    NSUserDefaults *userDefaults = [[NSUserDefaults standardUserDefaults] initWithSuiteName:AL_DEFAULT_APP_GROUP];
+    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] initWithSuiteName:AL_DEFAULT_APP_GROUP];
     return  [userDefaults valueForKey:AL_SHARE_EXTENSION];
 }
 
 +(NSUserDefaults *)getUserDefaults {
-    return [[NSUserDefaults standardUserDefaults] initWithSuiteName:AL_DEFAULT_APP_GROUP];
+    return [[NSUserDefaults alloc] initWithSuiteName:AL_DEFAULT_APP_GROUP];
 }
 
 +(void) setUserDefaultsMigratedFlag:(BOOL)flag {
@@ -1747,7 +1747,7 @@
 
 +(void)migrateUserDefaultsToAppGroups{
     //Old NSUserDefaults
-    NSUserDefaults * oldUserDefaults =  [[NSUserDefaults standardUserDefaults]init];
+    NSUserDefaults * oldUserDefaults =  [NSUserDefaults standardUserDefaults];
     NSDictionary *dictionary = [oldUserDefaults dictionaryRepresentation];
 
     NSArray * keyArray = [dictionary allKeys];
@@ -1762,7 +1762,7 @@
     }
 
     //Will use the deafault group for access and other places as well
-    NSUserDefaults * groupUserDefaults = [[NSUserDefaults standardUserDefaults] initWithSuiteName:AL_DEFAULT_APP_GROUP];
+    NSUserDefaults * groupUserDefaults = [[NSUserDefaults alloc] initWithSuiteName:AL_DEFAULT_APP_GROUP];
     if(groupUserDefaults != nil && ![ALApplozicSettings isUserDefaultsMigrated] ){
         for(NSString * key in dictionary.allKeys){
             [groupUserDefaults setObject:dictionary[key] forKey:key];
